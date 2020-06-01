@@ -1,0 +1,26 @@
+minecraft-server:
+  ports:
+    - "25565:25565"
+
+  environment:
+    EULA: "TRUE"
+    ONLINE_MODE: "true"
+    DIFFICULTY: "hard"
+    MOTD: "May the odds be ever in your favour"
+    SNOOPER_ENABLED: "false"
+    MODE: "survival"
+    MAX_MEMORY: 7600M
+    TYPE: SPIGOT
+    SPAWN_PROTECTION: 0
+  
+  volumes:
+    - "./data:/data"
+
+  image: itzg/minecraft-server
+
+  container_name: mc
+
+  tty: true
+  stdin_open: true
+  restart: unless-stopped
+
