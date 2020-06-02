@@ -77,6 +77,7 @@ services:
     environment:
       - USER_UID=1000
       - USER_GID=1000
+      - GITEA_SSH_PORT=2222
     restart: always
     networks:
       - web
@@ -102,6 +103,117 @@ services:
     depends_on:
       - postgres
       - traefik
+    ports:
+      - "2222:2222"
+  
+  cocalc:
+    image: sagemathinc/cocalc
+    container_name: cocalc
+    #environment:
+    restart: always
+    networks:
+      - web
+    volumes:
+      - ./cocalc:/projects
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cocalc.entrypoints=http"
+      - "traefik.http.routers.cocalc.rule=Host(`cocalc.woosaree.xyz`)"
+      - "traefik.http.middlewares.cocalc-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.cocalc.middlewares=cocalc-https-redirect"
+      - "traefik.http.routers.cocalc-secure.entrypoints=https"
+      - "traefik.http.routers.cocalc-secure.rule=Host(`cocalc.woosaree.xyz`)"
+      - "traefik.http.routers.cocalc-secure.tls=true"
+      - "traefik.http.routers.cocalc-secure.tls.certresolver=http"
+      - "traefik.http.routers.cocalc-secure.service=cocalc"
+      - "traefik.http.services.cocalc.loadbalancer.server.port=9000"
+      - "traefik.docker.network=web"
+    networks:
+      - web
+    depends_on:
+      - traefik
+    ports:
+      - "9000:443"
+  vikunja-backend:
+    image: vikunja/api
+    container_name: vikunja-backend
+    environment:
+      VIKUNJA_DATABASE_HOST: postgres
+      VIKUNJA_DATABASE_PASSWORD: gitea
+      VIKUNJA_DATABASE_TYPE: postgres
+      VIKUNJA_DATABASE_USER: gitea
+      VIKUNJA_DATABASE_DATABASE: gitea
+    volumes:
+      - ./vikunja/frontend/files:/app/vikunja/files
+    networks:
+      - web
+      - internal
+    depends_on:
+      - traefik
+      - postgres
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vikunja-api.rule=Host(`vikunja.woosaree.xyz`) && PathPrefix(`/api/v1`)"
+      - "traefik.http.routers.vikunja-api.entrypoints=http"
+      - "traefik.http.routers.vikunja-api.rule=Host(`vikunja.woosaree.xyz`)"
+      - "traefik.http.middlewares.vikunja-api-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.vikunja-api.middlewares=vikunja-api-https-redirect"
+      - "traefik.http.routers.vikunja-api-secure.entrypoints=https"
+      - "traefik.http.routers.vikunja-api-secure.rule=Host(`vikunja.woosaree.xyz`)"
+      - "traefik.http.routers.vikunja-api-secure.tls=true"
+      - "traefik.http.routers.vikunja-api-secure.tls.certresolver=http"
+      - "traefik.http.routers.vikunja-api-secure.service=vikunja-api"
+        #      - "traefik.http.services.vikunja-api.loadbalancer.server.port=8000"
+      - "traefik.docker.network=web"
+  vikunja-frontend:
+    image: vikunja/frontend
+    container_name: vikunja-frontend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vikunja.entrypoints=http"
+      - "traefik.http.routers.vikunja.rule=Host(`vikunja.woosaree.xyz`)"
+      - "traefik.http.middlewares.vikunja-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.vikunja.middlewares=vikunja-https-redirect"
+      - "traefik.http.routers.vikunja-secure.entrypoints=https"
+      - "traefik.http.routers.vikunja-secure.rule=Host(`vikunja.woosaree.xyz`)"
+      - "traefik.http.routers.vikunja-secure.tls=true"
+      - "traefik.http.routers.vikunja-secure.tls.certresolver=http"
+      - "traefik.http.routers.vikunja-secure.service=vikunja"
+        #      - "traefik.http.services.vikunja.loadbalancer.server.port=8000"
+      - "traefik.docker.network=web"
+    networks:
+      - web
+      - internal
+    restart: unless-stopped
+
+  connect4:
+    image: arunscape/connect4-server
+    container_name: connect4
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.connect4.entrypoints=http"
+      - "traefik.http.routers.connect4.rule=Host(`connect4.woosaree.xyz`)"
+      - "traefik.http.middlewares.connect4-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.connect4.middlewares=connect4-https-redirect"
+      - "traefik.http.routers.connect4-secure.entrypoints=https"
+      - "traefik.http.routers.connect4-secure.rule=Host(`connect4.woosaree.xyz`)"
+      - "traefik.http.routers.connect4-secure.tls=true"
+      - "traefik.http.routers.connect4-secure.tls.certresolver=http"
+      - "traefik.http.routers.connect4-secure.service=connect4"
+      - "traefik.http.services.connect4.loadbalancer.server.port=8000"
+      - "traefik.docker.network=web"
+    networks:
+      - web
+      - internal
+  mongo:
+    image: mongo
+    container_name: mongo
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=false"
+
 
 networks:
   web:

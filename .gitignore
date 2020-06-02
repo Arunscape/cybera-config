@@ -1,7 +1,9 @@
-gitea
+gitea/
 minecraft/data
-portainer
-traefik
+portainer/
+traefik/
+cocalc/
+postgres/data
 
 !postgres/.env
 !*.yml
